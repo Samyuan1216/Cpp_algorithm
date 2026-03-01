@@ -1,0 +1,104 @@
+#include <bits/stdc++.h>
+
+const int MAXN = 55;
+const double SML = 1e-7;
+double mat[MAXN][MAXN];
+int n, sign = 1;
+
+void swap(int row1, int row2)
+{
+    if (row1 == row2)
+    {
+        return;
+    }
+
+    for (int j = 1; j <= n + 1; j++)
+    {
+        double tmp = mat[row1][j];
+        mat[row1][j] = mat[row2][j];
+        mat[row2][j] = tmp;
+    }
+}
+
+void gauss()
+{
+    for (int i = 1; i <= n; i++)
+    {
+        int max = i;
+        for (int j = 1; j <= n; j++)
+        {
+            if (j < i && std::abs(mat[j][j]) >= SML)
+            {
+                continue;
+            }
+
+            if (std::abs(mat[j][i]) > std::abs(mat[max][i]))
+            {
+                max = j;
+            }
+        }
+
+        swap(i, max);
+
+        if (std::abs(mat[i][i]) > SML)
+        {
+            double tmp = mat[i][i];
+            for (int j = i; j <= n + 1; j++)
+            {
+                mat[i][j] /= tmp;
+            }
+
+            for (int j = 1; j <= n; j++)
+            {
+                if (j != i)
+                {
+                    double rate = mat[j][i] / mat[i][i];
+                    for (int k = i; k <= n + 1; k++)
+                    {
+                        mat[j][k] -= mat[i][k] * rate;
+                    }
+                }
+            }
+        }
+    }
+
+    for (int i = 1; i <= n; i++)
+    {
+        if (std::abs(mat[i][i]) < SML && std::abs(mat[i][n + 1]) >= SML)
+        {
+            sign = -1;
+            break;
+        }
+
+        if (std::abs(mat[i][i]) < SML)
+        {
+            sign = 0;
+        }
+    }
+}
+
+int main()
+{
+    scanf("%d", &n);
+    for (int i = 1; i <= n; i++)
+    {
+        for (int j = 1; j <= n + 1; j++)
+        {
+            scanf("%lf", &mat[i][j]);
+        }
+    }
+
+    gauss();
+
+    if (sign == 1)
+    {
+        for (int i = 1; i <= n; i++)
+        {
+            printf("x%d=%.2lf\n", i, mat[i][n + 1]);
+        }
+    }
+    else
+    {
+        printf("%d\n", sign);
+    }
+}
