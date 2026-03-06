@@ -1,14 +1,8 @@
-#include <bits/stdc++.h>
 #include <bits/extc++.h>
 namespace ranges = std::ranges;
 namespace views = std::views;
 
 using i64 = int64_t;
-using i128 = __int128;
-using u64 = uint64_t;
-using u128 = unsigned __int128;
-using f64 = double;
-using f128 = long double;
 
 template<typename T>
 using lim = std::numeric_limits<T>;
@@ -24,7 +18,7 @@ struct __X
 
 void solve()
 {
-    std::cout << std::format("{}: {}!\n", "pai", std::numbers::pi);
+    
 }
 
 int main()
