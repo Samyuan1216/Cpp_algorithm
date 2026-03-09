@@ -21,16 +21,14 @@ void solve()
 {
     auto euler = [&](int n)
     {
-        std::vector<bool> visited(n + 1);
-        std::vector<int> prime(n / 2 + 1);
-        std::vector<int> min_prime(n + 1, -1);
+        auto visited = std::vector<bool>(n + 1);
+        auto prime = std::vector<int>(n / 2 + 1);
     
         int cnt = 0;
         for (int i = 2; i <= n; ++i)
         {
             if (!visited[i])
             {
-                min_prime[i] = cnt;
                 prime[cnt++] = i;
             }
     
@@ -42,7 +40,6 @@ void solve()
                 }
     
                 visited[i * prime[j]] = true;
-                min_prime[i * prime[j]] = j;
                 if (i % prime[j] == 0)
                 {
                     break;
@@ -51,27 +48,22 @@ void solve()
         }
     
         prime.resize(cnt);
-        return std::pair{prime, min_prime};
+        return prime;
     };
 
-    auto [prime, min_prime] = euler(100010);
+    auto prime = euler(100010);
 
     int n, q;
     std::cin >> n >> q;
 
-    auto arr = std::vector<std::bitset<10000>>(n + 1);
-    for (int i = 1, x; i <= n; ++i)
+    auto arr = std::vector<int>(n + 1);
+    for (int i = 1; i <= n; ++i)
     {
-        std::cin >> x;
-        while (x > 1)
-        {
-            arr[i].set(min_prime[x]);
-            x /= prime[min_prime[x]];
-        }
+        std::cin >> arr[i];
     }
 
     auto g = std::vector(n + 1, std::vector<int>());
-    for (int i = 1, u, v; i < n; ++i)
+    for (int i = 0, u, v; i < n - 1; ++i)
     {
         std::cin >> u >> v;
 
@@ -79,21 +71,24 @@ void solve()
         g[v].push_back(u);
     }
 
+    auto father = std::vector<int>(n + 1);
+    auto dfn = std::vector<int>(n + 1);
+    int dfn_cnt = 0;
+
     int power = std::bit_width(unsigned(n));
     auto deep = std::vector<int>(n + 1);
     auto stjump = std::vector(n + 1, std::vector<int>(power + 1));
-    auto stprime = std::vector(n + 1, std::vector<std::bitset<10000>>(power + 1));
-
+    
     auto dfs = [&](auto &&self, int u, int f) -> void
     {
+        dfn[++dfn_cnt] = u;
+        father[u] = f;
+
         deep[u] = deep[f] + 1;
         stjump[u][0] = f;
-        stprime[u][0] = arr[u];
-
         for (int p = 1; (1 << p) <= deep[u]; ++p)
         {
             stjump[u][p] = stjump[stjump[u][p - 1]][p - 1];
-            stprime[u][p] = stprime[u][p - 1] | stprime[stjump[u][p - 1]][p - 1];
         }
     
         for (auto v: g[u])
@@ -114,40 +109,64 @@ void solve()
             std::swap(a, b);
         }
     
-        std::bitset<10000> ans;
         for (int p = power; p >= 0; --p)
         {
             if (deep[stjump[a][p]] >= deep[b])
             {
-                ans |= stprime[a][p];
                 a = stjump[a][p];
             }
         }
     
         if (a == b)
         {
-            ans |= arr[a];
-            return ans;
+            return a;
         }
     
         for (int p = power; p >= 0; --p)
         {
             if (stjump[a][p] != stjump[b][p])
             {
-                ans |= stprime[a][p] | stprime[b][p];
                 a = stjump[a][p], b = stjump[b][p];
             }
         }
     
-        ans |= stprime[a][0] | stprime[b][0] | arr[stjump[a][0]];
-        return ans;
+        return stjump[a][0];
     };
 
-    while (q--)
+    auto query = std::vector(q + 1, std::array<int, 4>());
+    for (int i = 1, u, v; i <= q; ++i)
     {
-        int u, v;
         std::cin >> u >> v;
-        std::cout << lca(u, v).count() << "\n";
+
+        query[i][0] = u, query[i][1] = v;
+        query[i][2] = lca(u, v);
+    }
+
+    auto sum = std::vector<int>(n + 1);
+    for (auto &p: prime)
+    {
+        for (int i = 1, u; i <= n; ++i)
+        {
+            u = dfn[i];
+            sum[u] = sum[father[u]] + (arr[u] % p == 0? 1: 0);
+        }
+
+        for (int i = 1; i <= q; ++i)
+        {
+            int u = query[i][0], v = query[i][1];
+            int l = query[i][2], fl = father[l];
+
+            int count = sum[u] + sum[v] - sum[l] - sum[fl];
+            if (count > 0)
+            {
+                ++query[i][3];
+            }
+        }
+    }
+
+    for (int i = 1; i <= q; ++i)
+    {
+        std::cout << query[i][3] << "\n";
     }
 }
 

@@ -1,6 +1,5 @@
 #include <bits/extc++.h>
 namespace ranges = std::ranges;
-namespace views = std::views;
 
 using i64 = int64_t;
 
