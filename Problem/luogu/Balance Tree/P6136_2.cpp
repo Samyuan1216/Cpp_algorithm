@@ -20,17 +20,26 @@ using rb_tree = __gnu_pbds::tree<T1, T2, F1, __gnu_pbds::rb_tree_tag, __gnu_pbds
 
 void solve()
 {
-    int n;
-    std::cin >> n;
+    int n, m;
+    std::cin >> n >> m;
 
     rb_tree<std::array<int, 2>> tree;
-    for (int i = 0, op, x; i < n; ++i)
+    for (int i = 0, x; i < n; ++i)
+    {
+        std::cin >> x;
+
+        tree.insert({x, i});
+    }
+
+    int ans = 0;
+    for (int i = 0, last = 0, op, x; i < m; ++i)
     {
         std::cin >> op >> x;
 
+        x ^= last;
         if (op == 1)
         {
-            tree.insert({x, i});
+            tree.insert({x, n + i});
         }
         else if (op == 2)
         {
@@ -38,24 +47,30 @@ void solve()
         }
         else if (op == 3)
         {
-            std::cout << tree.order_of_key({x, -1}) + 1 << "\n";
+            last = tree.order_of_key({x, -1}) + 1;
+            ans ^= last;
         }
         else if (op == 4)
         {
-            std::cout << (*tree.find_by_order(x - 1))[0] << "\n";
+            last = (*tree.find_by_order(x - 1))[0];
+            ans ^= last;
         }
         else if (op == 5)
         {
             auto iter = tree.lower_bound({x, -1});
             --iter;
 
-            std::cout << (*iter)[0] << "\n";
+            last = (*iter)[0];
+            ans ^= last;
         }
         else
         {
-            std::cout << (*tree.upper_bound({x, n}))[0] << "\n";
+            last = (*tree.lower_bound({x, n + m}))[0];
+            ans ^= last;
         }
     }
+
+    std::cout << ans << "\n";
 }
 
 int main()
