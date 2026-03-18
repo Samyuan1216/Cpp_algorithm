@@ -30,24 +30,13 @@ private:
     };
 
     std::vector<Node> tr;
-    std::vector<int> free_list;
     int head = 0;
 
     int new_node(const T &num)
     {
-        int i;
-        if (!free_list.empty())
-        {
-            i = free_list.back();
-            free_list.pop_back();
-        }
-        else
-        {
-            i = tr.size();
-            tr.push_back({});
-        }
+        int i = tr.size();
+        tr.emplace_back(num, 1, 0, 0, 1, 1);
 
-        tr[i] = {num, 1, 0, 0, 1, 1};
         return i;
     }
 
@@ -162,23 +151,15 @@ private:
             {
                 if (tr[i].left == 0 && tr[i].right == 0)
                 {
-                    free_list.push_back(i);
-
                     return 0;
                 }
                 else if (tr[i].left != 0 && tr[i].right == 0)
                 {
-                    int ret = tr[i].left;
-                    free_list.push_back(i);
-
-                    return ret;
+                    return tr[i].left;
                 }
                 else if (tr[i].left == 0 && tr[i].right != 0)
                 {
-                    int ret = tr[i].right;
-                    free_list.push_back(i);
-
-                    return ret;
+                    return tr[i].right;
                 }
                 else
                 {
@@ -191,7 +172,6 @@ private:
                     tr[i].right = remove_most_left(tr[i].right, most_left);
                     std::tie(tr[most_left].left, tr[most_left].right) = std::tuple(tr[i].left, tr[i].right);
 
-                    free_list.push_back(i);
                     i = most_left;
                 }
             }
@@ -216,11 +196,11 @@ private:
         return tr[tr[i].left].size + tr[i].count + small(tr[i].right, num);
     }
 
-    T index(int i, int x)
+    std::optional<T> index(int i, int x)
     {
         if (i == 0)
         {
-            return T{};
+            return std::nullopt;
         }
 
         if (tr[tr[i].left].size >= x)
@@ -236,11 +216,11 @@ private:
         return tr[i].key;
     }
 
-    T pre(int i, const T &num)
+    std::optional<T> pre(int i, const T &num)
     {
         if (i == 0)
         {
-            return lim<T>::lowest();
+            return std::nullopt;
         }
 
         if (tr[i].key >= num)
@@ -248,14 +228,15 @@ private:
             return pre(tr[i].left, num);
         }
 
-        return std::max(tr[i].key, pre(tr[i].right, num));
+        auto right_res = pre(tr[i].right, num);
+        return (right_res? right_res: tr[i].key);
     }
 
-    T post(int i, const T &num)
+    std::optional<T> post(int i, const T &num)
     {
         if (i == 0)
         {
-            return lim<T>::max();
+            return std::nullopt;
         }
 
         if (tr[i].key <= num)
@@ -263,12 +244,13 @@ private:
             return post(tr[i].right, num);
         }
 
-        return std::min(tr[i].key, post(tr[i].left, num));
+        auto left_res = post(tr[i].left, num);
+        return (left_res? left_res: tr[i].key);
     }
 public:
     AVL()
     {
-        tr.push_back({});
+        tr.emplace_back();
     }
 
     void add(const T &num)
@@ -286,17 +268,17 @@ public:
         return small(head, num) + 1;
     }
     
-    T index(int x)
+    std::optional<T> index(int x)
     {
         return index(head, x);
     }
     
-    T pre(const T &num)
+    std::optional<T> pre(const T &num)
     {
         return pre(head, num);
     }
     
-    T post(const T &num)
+    std::optional<T> post(const T &num)
     {
         return post(head, num);
     }
@@ -324,13 +306,13 @@ void solve()
                 std::cout << tree.rank(x) << "\n";
                 break;
             case 4:
-                std::cout << tree.index(x) << "\n";
+                std::cout << *tree.index(x) << "\n";
                 break;
             case 5:
-                std::cout << tree.pre(x) << "\n";
+                std::cout << *tree.pre(x) << "\n";
                 break;
             case 6:
-                std::cout << tree.post(x) << "\n";
+                std::cout << *tree.post(x) << "\n";
                 break;
         }
     }

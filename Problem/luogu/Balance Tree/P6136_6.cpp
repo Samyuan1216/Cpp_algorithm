@@ -16,26 +16,28 @@ struct __X
 #endif
 
 template<typename T = int>
-class AVL
+class FHQ_Treap
 {
-private:
     struct Node
     {
         T key = T{};
-        int height = 0;
         int left = 0;
         int right = 0;
-        int count = 0;
         int size = 0;
+        int count = 0;
+        double priority = 0;
     };
 
     std::vector<Node> tr;
     int head = 0;
 
+    std::mt19937 gen{std::random_device{}()};
+    std::uniform_real_distribution<double> dis{0.0, 1.0};
+
     int new_node(const T &num)
     {
         int i = tr.size();
-        tr.emplace_back(num, 1, 0, 0, 1, 1);
+        tr.emplace_back(num, 0, 0, 1, 1, dis(gen));
 
         return i;
     }
@@ -43,142 +45,90 @@ private:
     void up(int i)
     {
         tr[i].size = tr[tr[i].left].size + tr[tr[i].right].size + tr[i].count;
-        tr[i].height = std::max(tr[tr[i].left].height, tr[tr[i].right].height) + 1;
     }
 
-    int left_rotate(int i)
-    {
-        int r = tr[i].right;
-        std::tie(tr[i].right, tr[r].left) = std::tuple(tr[r].left, i);
-
-        up(i), up(r);
-        return r;
-    }
-
-    int right_rotate(int i)
-    {
-        int l = tr[i].left;
-        std::tie(tr[i].left, tr[l].right) = std::tuple(tr[l].right, i);
-
-        up(i), up(l);
-        return l;
-    }
-
-    int maintain(int i)
-    {
-        int lh = tr[tr[i].left].height, rh = tr[tr[i].right].height;
-        if (lh - rh > 1)
-        {
-            if (tr[tr[tr[i].left].left].height < tr[tr[tr[i].left].right].height)
-            {
-                tr[i].left = left_rotate(tr[i].left); 
-            }
-
-            i = right_rotate(i);
-        }
-        else if (rh - lh > 1)
-        {
-            if (tr[tr[tr[i].right].right].height < tr[tr[tr[i].right].left].height)
-            {
-                tr[i].right = right_rotate(tr[i].right);
-            }
-
-            i = left_rotate(i);
-        }
-
-        return i;
-    }
-
-    int add(int i, const T &num)
+    void split(int &l, int &r, int i, const T &num)
     {
         if (i == 0)
         {
-            return new_node(num);
+            l = r = 0;
+            return;
+        }
+
+        if (tr[i].key <= num)
+        {
+            l = i;
+            split(tr[i].right, r, tr[i].right, num);
+        }
+        else
+        {
+            r = i;
+            split(l, tr[i].left, tr[i].left, num);
+        }
+
+        up(i);
+    }
+
+    int merge(int l, int r)
+    {
+        if (l == 0 || r == 0)
+        {
+            return l + r;
+        }
+
+        if (tr[l].priority > tr[r].priority)
+        {
+            tr[l].right = merge(tr[l].right, r);
+
+            up(l);
+            return l;
+        }
+        else
+        {
+            tr[r].left = merge(l, tr[r].left);
+
+            up(r);
+            return r;
+        }
+    }
+
+    std::optional<T> find(int i, const T &num)
+    {
+        if (i == 0)
+        {
+            return std::nullopt;
         }
 
         if (tr[i].key == num)
         {
-            ++tr[i].count;
+            return i;
         }
         else if (tr[i].key > num)
         {
-            tr[i].left = add(tr[i].left, num);
+            return find(tr[i].left, num);
         }
         else
         {
-            tr[i].right = add(tr[i].right, num);
+            return find(tr[i].right, num);
         }
-
-        up(i);
-        return maintain(i);
     }
 
-    int remove_most_left(int i, int most_left)
+    void change_count(int i, const T &num, int change)
     {
-        if (i == most_left)
+        if (tr[i].key == num)
         {
-            return tr[i].right;
-        }
-
-        tr[i].left = remove_most_left(tr[i].left, most_left);
-
-        up(i);
-        return maintain(i);
-    }
-
-    int remove(int i, const T &num)
-    {
-        if (i == 0)
-        {
-            return 0;
-        }
-
-        if (tr[i].key < num)
-        {
-            tr[i].right = remove(tr[i].right, num);
+            tr[i].count += change;
         }
         else if (tr[i].key > num)
         {
-            tr[i].left = remove(tr[i].left, num);
+            change_count(tr[i].left, num, change);
         }
         else
         {
-            if (tr[i].count > 1)
-            {
-                --tr[i].count;
-            }
-            else
-            {
-                if (tr[i].left == 0 && tr[i].right == 0)
-                {
-                    return 0;
-                }
-                else if (tr[i].left != 0 && tr[i].right == 0)
-                {
-                    return tr[i].left;
-                }
-                else if (tr[i].left == 0 && tr[i].right != 0)
-                {
-                    return tr[i].right;
-                }
-                else
-                {
-                    int most_left = tr[i].right;
-                    while (tr[most_left].left != 0)
-                    {
-                        most_left = tr[most_left].left;
-                    }
-
-                    tr[i].right = remove_most_left(tr[i].right, most_left);
-                    std::tie(tr[most_left].left, tr[most_left].right) = std::tuple(tr[i].left, tr[i].right);
-
-                    i = most_left;
-                }
-            }
+            change_count(tr[i].right, num, change);
         }
 
         up(i);
-        return maintain(i);
     }
 
     int small(int i, const T &num)
@@ -248,21 +198,46 @@ private:
         return (left_res? left_res: tr[i].key);
     }
 public:
-    AVL()
+    FHQ_Treap()
     {
         tr.emplace_back();
     }
 
     void add(const T &num)
     {
-        head = add(head, num);
+        if (find(head, num))
+        {
+            change_count(head, num, 1);
+        }
+        else
+        {
+            int l, r;
+            split(l, r, head, num);
+            head = merge(merge(l, new_node(num)), r);
+        }
     }
-    
+
     void remove(const T &num)
     {
-        head = remove(head, num);
+        auto p = find(head, num);
+        if (p)
+        {
+            int i = *p;
+            if (tr[i].count > 1)
+            {
+                change_count(head, num, -1);
+            }
+            else
+            {
+                int l, m, r;
+                split(l, r, head, num);
+                split(l, m, l, num - 1);
+
+                head = merge(l, r);
+            }
+        }
     }
-    
+
     int rank(const T &num)
     {
         return small(head, num) + 1;
@@ -289,7 +264,7 @@ void solve()
     int n, m;
     std::cin >> n >> m;
 
-    AVL tree;
+    FHQ_Treap tree;
     for (int i = 0, x; i < n; ++i)
     {
         std::cin >> x;

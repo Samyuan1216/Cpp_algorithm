@@ -29,7 +29,6 @@ class Skip_List
     };
 
     std::vector<Node> tr;
-    std::vector<int> free_list;
 
     int random()
     {
@@ -47,19 +46,9 @@ class Skip_List
 
     int new_node(const T &num)
     {
-        int i;
-        if (!free_list.empty())
-        {
-            i = free_list.back();
-            free_list.pop_back();
-        }
-        else
-        {
-            i = tr.size();
-            tr.push_back({});
-        }
+        int i = tr.size();
+        tr.push_back({num, 1, random(), {}, {}});
 
-        tr[i] = {num, 1, random(), {}, {}};
         return i;
     }
 
@@ -283,7 +272,7 @@ public:
         auto j_opt = find(1, MAXL, num);
         if (j_opt)
         {
-            int j = j_opt.value();
+            int j = *j_opt;
             if (tr[j].count > 1)
             {
                 remove_count(1, MAXL, num);
@@ -291,7 +280,6 @@ public:
             else
             {
                 remove_node(1, MAXL, j);
-                free_list.push_back(j);
             }
         }
     }

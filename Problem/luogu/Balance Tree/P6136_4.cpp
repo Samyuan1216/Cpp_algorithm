@@ -30,7 +30,6 @@ class Scape_Goat
     };
 
     std::vector<Node> tr;
-    std::vector<int> free_list;
     int head = 0;
 
     std::vector<int> collect;
@@ -40,19 +39,9 @@ class Scape_Goat
 
     int new_node(const T &num)
     {
-        int i;
-        if (!free_list.empty())
-        {
-            i = free_list.back();
-            free_list.pop_back();
-        }
-        else
-        {
-            i = tr.size();
-            tr.push_back({});
-        }
+        int i = tr.size();
+        tr.emplace_back(num, 1, 0, 0, 1, 1);
 
-        tr[i] = {num, 1, 0, 0, 1, 1};
         return i;
     }
 
@@ -71,10 +60,7 @@ class Scape_Goat
             {
                 collect.push_back(i);
             }
-            else
-            {
-                free_list.push_back(i);
-            }
+
             inorder(tr[i].right);
         }
     }
@@ -225,7 +211,7 @@ class Scape_Goat
 public:
     Scape_Goat()
     {
-        tr.push_back({});
+        tr.emplace_back();
     }
 
     void add(const T &num)

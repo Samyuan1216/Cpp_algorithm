@@ -16,7 +16,7 @@ struct __X
 #endif
 
 template<typename T = int>
-class Treap
+class FHQ_Treap
 {
     struct Node
     {
@@ -47,111 +47,88 @@ class Treap
         tr[i].size = tr[tr[i].left].size + tr[tr[i].right].size + tr[i].count;
     }
 
-    int left_rotate(int i)
-    {
-        int r = tr[i].right;
-        std::tie(tr[i].right, tr[r].left) = std::tuple(tr[r].left, i);
-
-        up(i), up(r);
-        return r;
-    }
-
-    int right_rotate(int i)
-    {
-        int l = tr[i].left;
-        std::tie(tr[i].left, tr[l].right) = std::tuple(tr[l].right, i);
-
-        up(i), up(l);
-        return l;
-    }
-
-    int add(int i, const T &num)
+    void split(int &l, int &r, int i, const T &num)
     {
         if (i == 0)
         {
-            return new_node(num);
+            l = r = 0;
+            return;
+        }
+
+        if (tr[i].key <= num)
+        {
+            l = i;
+            split(tr[i].right, r, tr[i].right, num);
+        }
+        else
+        {
+            r = i;
+            split(l, tr[i].left, tr[i].left, num);
+        }
+
+        up(i);
+    }
+
+    int merge(int l, int r)
+    {
+        if (l == 0 || r == 0)
+        {
+            return l + r;
+        }
+
+        if (tr[l].priority > tr[r].priority)
+        {
+            tr[l].right = merge(tr[l].right, r);
+
+            up(l);
+            return l;
+        }
+        else
+        {
+            tr[r].left = merge(l, tr[r].left);
+
+            up(r);
+            return r;
+        }
+    }
+
+    std::optional<T> find(int i, const T &num)
+    {
+        if (i == 0)
+        {
+            return std::nullopt;
         }
 
         if (tr[i].key == num)
         {
-            ++tr[i].count;
+            return i;
         }
         else if (tr[i].key > num)
         {
-            tr[i].left = add(tr[i].left, num);
+            return find(tr[i].left, num);
         }
         else
         {
-            tr[i].right = add(tr[i].right, num);
+            return find(tr[i].right, num);
         }
-
-        up(i);
-        if (tr[i].left != 0 && tr[tr[i].left].priority > tr[i].priority)
-        {
-            return right_rotate(i);
-        }
-
-        if (tr[i].right != 0 && tr[tr[i].right].priority > tr[i].priority)
-        {
-            return left_rotate(i);
-        }
-
-        return i;
     }
 
-    int remove(int i, const T &num)
+    void change_count(int i, const T &num, int change)
     {
-        if (i == 0)
+        if (tr[i].key == num)
         {
-            return 0;
-        }
-
-        if (tr[i].key < num)
-        {
-            tr[i].right = remove(tr[i].right, num);
+            tr[i].count += change;
         }
         else if (tr[i].key > num)
         {
-            tr[i].left = remove(tr[i].left, num);
+            change_count(tr[i].left, num, change);
         }
         else
         {
-            if (tr[i].count > 1)
-            {
-                --tr[i].count;
-            }
-            else
-            {
-                if (tr[i].left == 0 && tr[i].right == 0)
-                {
-                    return 0;
-                }
-                else if (tr[i].left != 0 && tr[i].right == 0)
-                {
-                    i = tr[i].left;
-                }
-                else if (tr[i].left == 0 && tr[i].right != 0)
-                {
-                    i = tr[i].right;
-                }
-                else
-                {
-                    if (tr[tr[i].left].priority >= tr[tr[i].right].priority)
-                    {
-                        i = right_rotate(i);
-                        tr[i].right = remove(tr[i].right, num);
-                    }
-                    else
-                    {
-                        i = left_rotate(i);
-                        tr[i].left = remove(tr[i].left, num);
-                    }
-                }
-            }
+            change_count(tr[i].right, num, change);
         }
 
         up(i);
-        return i;
     }
 
     int small(int i, const T &num)
@@ -183,7 +160,7 @@ class Treap
 
         if (tr[tr[i].left].size + tr[i].count < x)
         {
-            return index(tr[i].right, x -  tr[tr[i].left].size - tr[i].count);
+            return index(tr[i].right, x - tr[tr[i].left].size - tr[i].count);
         }
 
         return tr[i].key;
@@ -221,21 +198,46 @@ class Treap
         return (left_res? left_res: tr[i].key);
     }
 public:
-    Treap()
+    FHQ_Treap()
     {
         tr.emplace_back();
     }
 
     void add(const T &num)
     {
-        head = add(head, num);
+        if (find(head, num))
+        {
+            change_count(head, num, 1);
+        }
+        else
+        {
+            int l, r;
+            split(l, r, head, num);
+            head = merge(merge(l, new_node(num)), r);
+        }
     }
 
     void remove(const T &num)
     {
-        head = remove(head, num);
+        auto p = find(head, num);
+        if (p)
+        {
+            int i = *p;
+            if (tr[i].count > 1)
+            {
+                change_count(head, num, -1);
+            }
+            else
+            {
+                int l, m, r;
+                split(l, r, head, num);
+                split(l, m, l, num - 1);
+
+                head = merge(l, r);
+            }
+        }
     }
-    
+
     int rank(const T &num)
     {
         return small(head, num) + 1;
@@ -262,7 +264,7 @@ void solve()
     int n;
     std::cin >> n;
 
-    Treap tree;
+    FHQ_Treap tree;
     for (int i = 0, op, x; i < n; ++i)
     {
         std::cin >> op >> x;
