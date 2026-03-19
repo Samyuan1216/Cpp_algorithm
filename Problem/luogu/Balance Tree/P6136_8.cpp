@@ -1,0 +1,333 @@
+#include <bits/extc++.h>
+namespace ranges = std::ranges;
+
+using i64 = int64_t;
+
+template<typename T>
+using lim = std::numeric_limits<T>;
+
+#ifndef YUAN_DEBUG
+struct __X
+{
+    __X& operator<<(const auto& str) {return *this;}
+    void sp([[maybe_unused]] const std::string& str = "") {}
+} dout;
+#define debug(x)
+#endif
+
+template<typename T = int>
+class Splay
+{
+    struct Node
+    {
+        T key = T{};
+        int left = 0;
+        int right = 0;
+        int size = 0;
+        int father = 0;
+    };
+
+    std::vector<Node> tr;
+    int head = 0;
+
+    int new_node(const T &num)
+    {
+        int i = tr.size();
+        tr.emplace_back(num, 0, 0, 1, 0);
+
+        return i;
+    }
+
+    void up(int i)
+    {
+        tr[i].size = tr[tr[i].left].size + tr[tr[i].right].size + 1;
+    }
+
+    int lr(int i)
+    {
+        return (tr[tr[i].father].right == i? 1: 0);
+    }
+
+    void rotate(int i)
+    {
+        int f = tr[i].father, g = tr[f].father, soni = lr(i), sonf = lr(f);
+        if (soni == 1)
+        {
+            tr[f].right = tr[i].left;
+            if (tr[f].right != 0)
+            {
+                tr[tr[f].right].father = f;
+            }
+
+            tr[i].left = f;
+        }
+        else
+        {
+            tr[f].left = tr[i].right;
+            if (tr[f].left != 0)
+            {
+                tr[tr[f].left].father = f;
+            }
+
+            tr[i].right = f;
+        }
+
+        if (g != 0)
+        {
+            (sonf == 1? tr[g].right: tr[g].left) = i;
+        }
+
+        tr[f].father = i, tr[i].father = g;
+        up(f), up(i);
+    }
+
+    void splay(int i, int goal)
+    {
+        int f = tr[i].father, g = tr[f].father;
+        while (f != goal)
+        {
+            if (g != goal)
+            {
+                lr(i) == lr(f)? rotate(f): rotate(i);
+            }
+
+            rotate(i);
+            f = tr[i].father, g = tr[f].father;
+        }
+
+        if (goal == 0)
+        {
+            head = i;
+        }
+    }
+
+    int find(int rank)
+    {
+        int i = head;
+        while (i != 0)
+        {
+            if (tr[tr[i].left].size + 1 == rank)
+            {
+                return i;
+            }
+            else if (tr[tr[i].left].size >= rank)
+            {
+                i = tr[i].left;
+            }
+            else
+            {
+                rank -= tr[tr[i].left].size + 1;
+                i = tr[i].right;
+            }
+        }
+
+        return 0;
+    }
+public:
+    Splay()
+    {
+        tr.emplace_back();
+    }
+
+    void add(const T &num)
+    {
+        if (int idx = new_node(num); head == 0)
+        {
+            head = idx;
+        }
+        else
+        {
+            int f = 0, i = head, son = 0;
+            while (i != 0)
+            {
+                f = i;
+                if (tr[i].key <= num)
+                {
+                    son = 1;
+                    i = tr[i].right;
+                }
+                else
+                {
+                    son = 0;
+                    i = tr[i].left;
+                }
+            }
+
+            (son == 1? tr[f].right: tr[f].left) = idx;
+            tr[idx].father = f;
+
+            splay(idx, 0);
+        }
+    }
+
+    void remove(const T &num)
+    {
+        if (int kth = rank(num); kth != rank(num + 1))
+        {
+            int i = find(kth);
+            splay(i, 0);
+
+            if (tr[i].left == 0)
+            {
+                head = tr[i].right;
+            }
+            else if (tr[i].right == 0)
+            {
+                head = tr[i].left;
+            }
+            else
+            {
+                int j = find(kth + 1);
+                splay(j, i);
+
+                tr[j].left = tr[i].left;
+                tr[tr[j].left].father = j;
+
+                up(j);
+                head = j;
+            }
+
+            tr[head].father = 0;
+        }
+    }
+
+    int rank(const T &num)
+    {
+        int i = head, last = head;
+
+        int ans = 0;
+        while (i != 0)
+        {
+            last = i;
+            if (tr[i].key >= num)
+            {
+                i = tr[i].left;
+            }
+            else
+            {
+                ans += tr[tr[i].left].size + 1;
+                i = tr[i].right;
+            }
+        }
+
+        splay(last, 0);
+        return ans + 1;
+    }
+
+    std::optional<T> index(int x)
+    {
+        int i = find(x);
+        splay(i, 0);
+
+        return (i != 0? std::optional(tr[i].key): std::nullopt);
+    }
+
+    std::optional<T> pre(const T &num)
+    {
+        int i = head, last = head;
+
+        T ans = lim<T>::min();
+        while (i != 0)
+        {
+            last = i;
+            if (tr[i].key >= num)
+            {
+                i = tr[i].left;
+            }
+            else
+            {
+                ans = std::max(ans, tr[i].key);
+                i = tr[i].right;
+            }
+        }
+
+        splay(last, 0);
+        return (ans != lim<T>::min()? std::optional(ans): std::nullopt);
+    }
+
+    std::optional<T> post(const T &num)
+    {
+        int i = head, last = head;
+
+        T ans = lim<T>::max();
+        while (i != 0)
+        {
+            last = i;
+            if (tr[i].key <= num)
+            {
+                i = tr[i].right;
+            }
+            else
+            {
+                ans = std::min(ans, tr[i].key);
+                i = tr[i].left;
+            }
+        }
+
+        splay(last, 0);
+        return (ans != lim<T>::max()? std::optional(ans): std::nullopt);
+    }
+};
+
+void solve()
+{
+    int n, m;
+    std::cin >> n >> m;
+
+    Splay tree;
+    for (int i = 0, x; i < n; ++i)
+    {
+        std::cin >> x;
+
+        tree.add(x);
+    }
+
+    int ans = 0;
+    for (int i = 0, last = 0, op, x; i < m; ++i)
+    {
+        std::cin >> op >> x;
+
+        x ^= last;
+        if (op == 1)
+        {
+            tree.add(x);
+        }
+        else if (op == 2)
+        {
+            tree.remove(x);
+        }
+        else if (op == 3)
+        {
+            last = tree.rank(x);
+            ans ^= last;
+        }
+        else if (op == 4)
+        {
+            last = *tree.index(x);
+            ans ^= last;
+        }
+        else if (op == 5)
+        {
+            last = *tree.pre(x);
+            ans ^= last;
+        }
+        else
+        {
+            last = *tree.post(x);
+            ans ^= last;
+        }
+    }
+
+    std::cout << ans << "\n";
+}
+
+int main()
+{
+    std::cin.tie(nullptr)->sync_with_stdio(false);
+
+    int t = 1;
+    while (t--)
+    {
+        solve();
+    }
+}
