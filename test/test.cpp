@@ -1,7 +1,7 @@
 #include <bits/extc++.h>
 namespace ranges = std::ranges;
 
-using i64 = int64_t;
+using i64 = long long;
 
 template<typename T>
 using lim = std::numeric_limits<T>;
