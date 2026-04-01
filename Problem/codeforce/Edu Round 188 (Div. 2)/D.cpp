@@ -30,26 +30,24 @@ void solve()
     }
 
     int cnt1 = 0, cnt2 = 0;
+    bool status = true;
     auto color = std::vector<int>(n + 1);
-    auto dfs = [&](this auto &&self, int u, int f, int c) -> bool
+    auto dfs = [&](this auto &&self, int u, int c) -> void
     {
         color[u] = c;
         (c == 1? ++cnt1: ++cnt2);
 
         for (auto &v: g[u])
         {
-            if (v == f)
+            if (color[v] == c)
             {
-                continue;
+                status = false;
             }
-
-            if (color[v] == c || (color[v] == 0 && !self(v, u, -c)))
+            else if (color[v] == 0)
             {
-                return false;
+                self(v, -c);
             }
         }
-
-        return true;
     };
 
     int ans = 0;
@@ -58,7 +56,10 @@ void solve()
         if (color[i] == 0)
         {
             cnt1 = 0, cnt2 = 0;
-            if (dfs(i, 0, 1))
+            status = true;
+            dfs(i, 1);
+
+            if (status)
             {
                 ans += std::max(cnt1, cnt2);
             }
