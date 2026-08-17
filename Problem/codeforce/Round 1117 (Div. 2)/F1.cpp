@@ -14,9 +14,7 @@ struct __X
 
 void solve()
 {
-    std::string str;
-    std::cin >> str;
-    std::cout << (ranges::count(str, 'E') > ranges::count(str, 'W')? "East\n": "West\n");
+    
 }
 
 int main()
@@ -24,6 +22,7 @@ int main()
     std::cin.tie(nullptr)->sync_with_stdio(false);
 
     int t = 1;
+    std::cin >> t;
     while (t--)
     {
         solve();
