@@ -14,29 +14,7 @@ struct __X
 
 void solve()
 {
-    i64 n, k;
-    std::cin >> n >> k;
-
-    std::map<i64, int> prev;
-    prev[0] = 0;
-
-    i64 sum = 0, last = 0, ans = 0;
-    for (int r = 1; r <= n; ++r)
-    {
-        i64 x;
-        std::cin >> x;
-
-        sum = (sum + x) % k;
-        if (prev.contains(sum) && prev[sum] >= last)
-        {
-            ++ans;
-            last = r;
-        }
-
-        prev[sum] = r;
-    }
-
-    std::cout << ans << "\n";
+    
 }
 
 int main()
@@ -44,6 +22,7 @@ int main()
     std::cin.tie(nullptr)->sync_with_stdio(false);
 
     int t = 1;
+    std::cin >> t;
     while (t--)
     {
         solve();

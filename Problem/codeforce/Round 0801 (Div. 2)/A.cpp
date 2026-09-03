@@ -14,29 +14,27 @@ struct __X
 
 void solve()
 {
-    i64 n, k;
-    std::cin >> n >> k;
+    i64 n, m;
+    std::cin >> n >> m;
 
-    std::map<i64, int> prev;
-    prev[0] = 0;
+    std::vector grid(n, std::vector<i64>(m));
+    i64 max = -1e9, x, y;
 
-    i64 sum = 0, last = 0, ans = 0;
-    for (int r = 1; r <= n; ++r)
+    for (int i = 0; i < n; ++i)
     {
-        i64 x;
-        std::cin >> x;
-
-        sum = (sum + x) % k;
-        if (prev.contains(sum) && prev[sum] >= last)
+        for (int j = 0; j < m; ++j)
         {
-            ++ans;
-            last = r;
-        }
+            std::cin >> grid[i][j];
 
-        prev[sum] = r;
+            if (grid[i][j] > max)
+            {
+                max = grid[i][j];
+                x = i, y = j;
+            }
+        }
     }
 
-    std::cout << ans << "\n";
+    std::cout << std::max(x + 1, n - x) * std::max(y + 1, m - y) << "\n";
 }
 
 int main()
@@ -44,6 +42,7 @@ int main()
     std::cin.tie(nullptr)->sync_with_stdio(false);
 
     int t = 1;
+    std::cin >> t;
     while (t--)
     {
         solve();

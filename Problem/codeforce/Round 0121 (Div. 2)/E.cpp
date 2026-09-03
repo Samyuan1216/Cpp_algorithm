@@ -299,87 +299,135 @@ public:
 void solve()
 {
     int n;
-    std::string str;
-    std::cin >> n >> str;
+    std::cin >> n;
+
+    std::vector<std::vector<std::array<int, 2>>> g(n);
+    for (int i = 0, u, v; i < n - 1; ++i)
+    {
+        std::cin >> u >> v;
+        --u, --v;
+
+        g[u].push_back({v, i});
+        g[v].push_back({u, i});
+    }
+
+    std::vector<int> father(n, -1), deep(n), size(n, 1), son(n, -1), id(n);
+    [&](this auto &&self, int u, int f, int i) -> void
+    {
+        father[u] = f;
+        deep[u] = deep[f] + 1;
+        id[u] = i;
+
+        for (auto &[v, vi]: g[u])
+        {
+            if (v == f)
+            {
+                continue;
+            }
+
+            self(v, u, vi);
+
+            size[u] += size[v];
+            if (son[u] == -1 || size[son[u]] < size[v])
+            {
+                son[u] = v;
+            }
+        }
+    } (0, 0, -1);
+
+    std::vector<int> top(n), dfn(n), seg(n);
+    int cnt = 0;
+
+    [&](this auto &&self, int u, int t) -> void
+    {
+        top[u] = t;
+        dfn[u] = cnt;
+        seg[cnt++] = u;
+
+        if (son[u] == -1)
+        {
+            return;
+        }
+
+        self(son[u], t);
+        for (auto &[v, vi]: g[u])
+        {
+            if (v == father[u] || v == son[u])
+            {
+                continue;
+            }
+
+            self(v, v);
+        }
+    } (0, 0);
 
     struct Tag
     {
-        int val = -1;
+        int val = 0;
 
         void apply(const Tag &t)
         {
-            val = t.val;
+            val += t.val;
         }
     };
 
     struct Info
     {
-        int sum = 0, len = 1, min = 0;
+        int sum = 0, len = 1;
 
         Info operator+(const Info &other) const
         {
-            if (len == 0)
-            {
-                return other;
-            }
-            else if (other.len == 0)
-            {
-                return *this;
-            }
-
-            return {sum + other.sum, len + other.len, std::min(min, sum + other.min)};
+            return {sum + other.sum, len + other.len};
         }
 
         bool apply(const Tag &t)
         {
-            if (t.val == 0)
-            {
-                sum = len;
-                min = 0;
-            }
-            else
-            {
-                sum = -len;
-                min = -len;
-            }
+            sum += t.val * len;
 
             return true;
         }
     };
 
-    std::vector<Info> init(n);
-    for (int i = 0; i < n; ++i)
+    Seg_Tree<Info, Tag> tr(n);
+
+    int k;
+    std::cin >> k;
+
+    while (k--)
     {
-        init[i] = {(str[i] == 'A'? 1: -1), 1, (str[i] == 'A'? 0: -1)};
+        int x, y;
+        std::cin >> x >> y;
+        --x, --y;
+
+        while (top[x] != top[y])
+        {
+            if (deep[top[x]] > deep[top[y]])
+            {
+                tr.modify(dfn[top[x]], dfn[x], {1});
+                x = father[top[x]];
+            }
+            else
+            {
+                tr.modify(dfn[top[y]], dfn[y], {1});
+                y = father[top[y]];
+            }
+        }
+
+        if (dfn[x] != dfn[y])
+        {
+            tr.modify(std::min(dfn[x], dfn[y]) + 1, std::max(dfn[x], dfn[y]), {1});
+        }
     }
 
-    Seg_Tree<Info, Tag> tr(init);
-
-    int q;
-    std::cin >> q;
-
-    while (q--)
+    std::vector<int> ans(n - 1);
+    for (int i = 1; i < n; ++i)
     {
-        int op;
-        std::cin >> op;
+        ans[id[i]] = tr.query(dfn[i], dfn[i]).sum;
+    }
 
-        if (op == 1)
-        {
-            int i;
-            char c;
-            std::cin >> i >> c;
-            --i;
-
-            tr.modify(i, i, {c - 'A'});
-        }
-        else
-        {
-            int l, r;
-            std::cin >> l >> r;
-            --l, --r;
-
-            std::cout << (tr.query(l, r).min >= 0? "Yes\n": "No\n");
-        }
+    for (int i = 0; i < n - 1; ++i)
+    {
+        std::cout << ans[i] << " \n"[i == n - 2];
     }
 }
 
