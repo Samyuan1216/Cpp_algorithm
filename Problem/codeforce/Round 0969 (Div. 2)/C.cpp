@@ -14,7 +14,28 @@ struct __X
 
 void solve()
 {
-    
+    int n, a, b;
+    std::cin >> n >> a >> b;
+
+    int g = std::gcd(a, b);
+    std::vector<int> arr(n);
+
+    for (auto &x: arr)
+    {
+        std::cin >> x;
+
+        x %= g;
+    }
+
+    ranges::sort(arr);
+
+    int max = arr[0] + g - arr[n - 1];
+    for (int i = 1; i < n; ++i)
+    {
+        max = std::max(max, arr[i] - arr[i - 1]);
+    }
+
+    std::cout << g - max << "\n";
 }
 
 int main()

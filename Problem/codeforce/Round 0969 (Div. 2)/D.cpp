@@ -14,7 +14,57 @@ struct __X
 
 void solve()
 {
-    
+    int n;
+    std::cin >> n;
+
+    std::vector<int> in(n);
+    for (int i = 1, u, v; i < n; ++i)
+    {
+        std::cin >> u >> v;
+        --u, --v;
+
+        ++in[u], ++in[v];
+    }
+
+    std::string str;
+    std::cin >> str;
+
+    int c0 = 0, c1 = 0, m = 0, q = 0;
+    for (int i = 1; i < n; ++i)
+    {
+        if (in[i] == 1)
+        {
+            if (str[i] == '0')
+            {
+                ++c0;
+            }
+            else if (str[i] == '1')
+            {
+                ++c1;
+            }
+            else
+            {
+                ++m;
+            }
+        }
+        else if (str[i] == '?')
+        {
+            ++q;
+        }
+    }
+
+    if (str[0] != '?')
+    {
+        std::cout << (str[0] == '1'? c0: c1) + (m + 1) / 2 << "\n";
+    }
+    else if (c0 != c1)
+    {
+        std::cout << std::max(c0, c1) + m / 2 << "\n";
+    }
+    else
+    {
+        std::cout << c0 + (q & 1? m + 1: m) / 2 << "\n";
+    }
 }
 
 int main()
