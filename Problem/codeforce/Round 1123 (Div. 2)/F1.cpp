@@ -14,7 +14,58 @@ struct __X
 
 void solve()
 {
-    
+    int n, q;
+    std::cin >> n >> q;
+
+    std::vector<int> arr(n);
+    for (auto &x: arr)
+    {
+        std::cin >> x;
+    }
+
+    ranges::sort(arr);
+
+    int m = 0;
+    for (int i = 0; i < n; ++i)
+    {
+        for (int j = i + 1; j < n; ++j)
+        {
+            ++m;
+        }
+    }
+
+    std::vector<int> ans{arr[n - 1] - arr[0]}, b(m);
+    while (true)
+    {
+        int idx = 0;
+        for (int i = 0; i < n; ++i)
+        {
+            for (int j = i + 1; j < n; ++j)
+            {
+                b[idx++] = arr[i] ^ arr[j];
+            }
+        }
+
+        ranges::sort(b);
+
+        for (int i = 0; i < n; ++i)
+        {
+            arr[i] = b[i];
+        }
+
+        ans.push_back(arr[n - 1] - arr[0]);
+        if (ans.back() == 0)
+        {
+            break;
+        }
+    }
+
+    while (q--)
+    {
+        int x;
+        std::cin >> x;
+        std::cout << ans[std::min(x, int(std::ssize(ans) - 1))] << "\n";
+    }
 }
 
 int main()
