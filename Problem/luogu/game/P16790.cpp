@@ -2,6 +2,8 @@
 namespace ranges = std::ranges;
 
 using i64 = long long;
+using u64 = unsigned long long;
+using i128 = __int128_t;
 
 #ifndef YUAN_DEBUG
 struct __X
@@ -12,15 +14,14 @@ struct __X
 #define debug(x)
 #endif
 
-template<typename T = int,
-         typename F = decltype([](const int num, int i)
+template<typename T = std::string,
+         typename F = decltype([](const std::string &word, int i)
          {
-             return (num >> i) & 1;
+             return word[i] - 'a';
          }),
-         int N = 2>
+         int N = 26>
 struct Trie
 {
-private:
     std::vector<std::array<int, N>> tree;
     std::vector<int> pass;
     std::vector<int> end;
@@ -35,18 +36,18 @@ private:
         pass.assign(2, 0);
         end.assign(2, 0);
     }
-public:
+
     Trie(F func = F{}) : compute(func)
     {
         build();
     }
 
-    void insert(const T &word, int n = 30)
+    void insert(const T &word, int n)
     {
         int cur = 1;
         pass[cur]++;
 
-        for (int i = n - 1; i >= 0; --i)
+        for (int i = 0; i < n; ++i)
         {
             int path = compute(word, i);
             if (tree[cur][path] == 0)
@@ -66,45 +67,6 @@ public:
         }
 
         end[cur]++;
-    }
-
-    T kth(const T &word, int k, int n = 30)
-    {
-        if (k <= 0 || k > pass[1])
-        {
-            return T(-1);
-        }
-
-        int cur = 1;
-        T result = 0;
-
-        for (int i = n - 1; i >= 0; --i)
-        {
-            int path = compute(word, i);
-
-            int same = tree[cur][path];
-            int same_cnt = (same == 0? 0: pass[same]);
-
-            if (k <= same_cnt)
-            {
-                cur = same;
-            }
-            else
-            {
-                k -= same_cnt;
-
-                int diff = tree[cur][path ^ 1];
-                if (diff == 0)
-                {
-                    return T(-1);
-                }
-
-                result |= (T(1) << i);
-                cur = diff;
-            }
-        }
-
-        return result;
     }
 
     int search(const T &word, int n)
@@ -175,63 +137,35 @@ public:
 
 void solve()
 {
-    int n, q;
-    std::cin >> n >> q;
+    int n;
+    std::cin >> n;
 
-    std::vector<int> arr(n);
-    for (auto &x: arr)
+    Trie tr;
+    for (int i = 0; i < n; ++i)
     {
-        std::cin >> x;
+        std::string str;
+        std::cin >> str;
+
+        tr.insert(str, std::ssize(str));
     }
 
-    ranges::sort(arr);
-
-    std::vector<int> ans{arr[n - 1] - arr[0]}, b(2 * n);
-    while (true)
+    std::vector<int> sg(tr.cnt + 1);
+    [&](this auto &&self, int cur) -> void
     {
-        Trie tr;
-        for (int i = 0; i < n; ++i)
+        for (int path = 0; path < 26; ++path)
         {
-            tr.insert(arr[i]);
-        }
-
-        std::priority_queue<std::array<int, 3>, std::vector<std::array<int, 3>>, std::greater<>> heap;
-        for (int i = 0; i < n; ++i)
-        {
-            heap.push({tr.kth(arr[i], 2), i, 2});
-        }
-
-        int idx = 0;
-        for (int i = 0; i < 2 * n; ++i)
-        {
-            auto [val, id, rank] = heap.top();
-            heap.pop();
-
-            b[idx++] = val;
-            if (rank < n)
+            if (tr.tree[cur][path] == 0)
             {
-                heap.push({tr.kth(arr[id], rank + 1), id, rank + 1});
+                continue;
             }
-        }
 
-        for (int i = 0; i < n; ++i)
-        {
-            arr[i] = b[i * 2];
-        }
+            self(tr.tree[cur][path]);
 
-        ans.push_back(arr[n - 1] - arr[0]);
-        if (arr[n - 1] == 0)
-        {
-            break;
+            sg[cur] ^= sg[tr.tree[cur][path]] + 1;
         }
-    }
+    } (1);
 
-    while (q--)
-    {
-        int x;
-        std::cin >> x;
-        std::cout << ans[std::min(x, int(std::ssize(ans) - 1))] << "\n";
-    }
+    std::cout << (sg[1] != 0? "XiaoLan\n": "XiaoQiao\n");
 }
 
 int main()
