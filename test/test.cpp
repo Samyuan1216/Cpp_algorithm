@@ -5,6 +5,15 @@ using i64 = long long;
 using u64 = unsigned long long;
 using i128 = __int128_t;
 
+#ifndef YUAN_DEBUG
+struct __X
+{
+    __X& operator<<(const auto& str) {return *this;}
+    void sp([[maybe_unused]] const std::string& str = "") {}
+} dout;
+#define debug(x)
+#endif
+
 void solve()
 {
     

@@ -1,53 +1,65 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <string>
+#include <vector>
+using namespace std;
 
-std::string escapeJSON(const std::string& input) {
-    std::string output;
-    output.reserve(input.length());
-    for (char c : input) {
-        switch (c) {
-            case '"':  output += "\\\""; break;
-            case '\\': output += "\\\\"; break;
-            case '\t': output += "\\t";  break;
-            default:   output += c;      break;
+// Encode a string as a JSON string literal.
+string jsonString(const string& s) {
+    const char* hex = "0123456789abcdef";
+    string result = "\"";
+    for (unsigned char c : s) {
+        if (c == '"' || c == '\\') {
+            result += '\\';
+            result += c;
+        } else if (c < 0x20) {
+            result += "\\u00";
+            result += hex[c >> 4];
+            result += hex[c & 15];
+        } else {
+            result += c;
         }
     }
-    return output;
+    return result + '"';
+}
+
+// Escape snippet syntax before applying JSON escaping.
+string snippetLine(const string& s) {
+    string result;
+    for (char c : s) {
+        if (c == '\\' || c == '$' || c == '}')
+            result += '\\';
+        result += c;
+    }
+    return jsonString(result);
 }
 
 int main() {
-    std::string prefix, description, line;
-    
-    if (!(std::cin >> prefix)) return 0;
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
 
-    std::getline(std::cin, description);
-    description.erase(std::remove(description.begin(), description.end(), '\r'), description.end());
-    description = escapeJSON(description);
-
-    std::vector<std::string> body_lines;
-    while (std::getline(std::cin, line)) {
-        line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
-        body_lines.push_back(escapeJSON(line));
+    string name, line;
+    if (!getline(cin, name)) return 1;
+    if (!name.empty() && name.back() == '\r') name.pop_back();
+    if (name.empty()) {
+        cerr << "Snippet name cannot be empty.\n";
+        return 1;
     }
 
-    std::cout << "{\n";
-    std::cout << "\t\"Print to console\": {\n";
-    std::cout << "\t\t\"scope\": \"cpp\",\n";
-    std::cout << "\t\t\"prefix\": \"" << prefix << "\",\n";
-    std::cout << "\t\t\"body\": [\n";
-
-    for (size_t i = 0; i < body_lines.size(); ++i) {
-        std::cout << "\t\t\t\"" << body_lines[i] << "\"";
-        if (i != body_lines.size() - 1) {
-            std::cout << ",";
-        }
-        std::cout << "\n";
+    vector<string> body;
+    while (getline(cin, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line == "<<<END>>>") break;
+        body.push_back(line);
     }
 
-    std::cout << "\t\t],\n";
-    std::cout << "\t\t\"description\": \"" << description << "\"\n";
-    std::cout << "\t}\n";
-    std::cout << "}\n";
-
-    return 0;
+    cout << "{\n  " << jsonString(name) << ": {\n"
+         << "    \"scope\": \"cpp\",\n"
+         << "    \"prefix\": " << jsonString(name) << ",\n"
+         << "    \"body\": [";
+    for (size_t i = 0; i < body.size(); ++i)
+        cout << (i ? ",\n" : "\n") << "      " << snippetLine(body[i]);
+    cout << "\n    ],\n"
+         << "    \"description\": " << jsonString(name) << "\n"
+         << "  }\n}\n";
+    return cout ? 0 : 1;
 }
