@@ -7,9 +7,7 @@ using i128 = __int128_t;
 
 void solve()
 {
-    int x;
-    std::cin >> x;
-    std::cout << 2 * x << "\n";
+    
 }
 
 int main()
